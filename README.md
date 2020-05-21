@@ -1,9 +1,8 @@
 ## Synopsis
-Use `pwatch` like
 ```
 pwatch make
 ```
-and `make` will be called each time a source file is changed.
+will cause `make` to be called each time a source file is changed.
 
 ## Usage
 ```
