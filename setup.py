@@ -17,7 +17,7 @@ setup(
     description="Rerun command on source change",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/TODO",
+    url="https://github.com/9pt7/pwatch",
     packages=find_packages(),
     entry_points={"console_scripts": ["pwatch=pwatch.command_line:main"]},
     install_requires=["watchdog"],
