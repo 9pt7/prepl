@@ -20,6 +20,3 @@ TODO
 
 ## How it works
 When `COMMAND` is executed, `pwatch` loads a shared library into the running process via the `LD_PRELOAD` environment variable. The shared library intercepts calls to `libc` that access the filesystem so `pwatch` can build a list of files to observe. `COMMAND` is executed each time any file being observed is changed.
-
-## Contribution Guidelines
-TODO
