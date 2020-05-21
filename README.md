@@ -1,4 +1,16 @@
-Description TODO
+## Usage
+```
+usage: pwatch [-h] command [args ...]
+
+Autorun command on file change.
+
+positional arguments:
+  command     the command to run
+  args        additional arguments for command
+
+optional arguments:
+  -h, --help  show this help message and exit
+```
 
 ## Installation
 TODO
