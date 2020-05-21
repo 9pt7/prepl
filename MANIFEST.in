@@ -1,0 +1,10 @@
+include README.md
+include CMakeLists.txt
+recursive-include src CMakeLists.txt *.cc
+
+include thirdparty/CMakeLists.txt
+recursive-include thirdparty LICEN[CS]E*
+
+graft thirdparty/json/single_include
+include thirdparty/json/CMakeLists.txt
+graft thirdparty/json/cmake

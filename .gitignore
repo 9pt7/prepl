@@ -1,0 +1,17 @@
+
+# build
+_skbuild
+build
+dist
+MANIFEST
+pwatch.egg-info
+
+# python
+__pycache__
+
+# env
+bin
+lib
+lib64
+share
+pyvenv.cfg
