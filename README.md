@@ -1,3 +1,10 @@
+## Synopsis
+Use `pwatch` like
+```
+pwatch make
+```
+and `make` will be called each time a source file is changed.
+
 ## Usage
 ```
 usage: pwatch [-h] command [args ...]
