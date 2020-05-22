@@ -160,14 +160,24 @@ int creat64(const char *__file, mode_t __mode)
 
 int __xstat(int __ver, const char *pathname, struct stat *statbuf)
 {
-    notify(pathname, true);
-    return NEXT(__xstat)(__ver, pathname, statbuf);
+    int rc = NEXT(__xstat)(__ver, pathname, statbuf);
+    if (rc == 0) {
+        if ((statbuf->st_mode & S_IFMT) == S_IFREG) {
+            notify(pathname, true);
+        }
+    }
+    return rc;
 }
 
 int __xstat64(int __ver, const char *pathname, struct stat64 *statbuf)
 {
-    notify(pathname, true);
-    return NEXT(__xstat64)(__ver, pathname, statbuf);
+    int rc = NEXT(__xstat64)(__ver, pathname, statbuf);
+    if (rc == 0) {
+        if ((statbuf->st_mode & S_IFMT) == S_IFREG) {
+            notify(pathname, true);
+        }
+    }
+    return rc;
 }
 
 int __xmknod(int __ver, const char *__path, __mode_t __mode, __dev_t *__dev)

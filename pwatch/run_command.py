@@ -70,5 +70,5 @@ def run_command(cmd, event_handler):
                     raise subprocess.CalledProcessError(rc, " ".join(cmd))
                 break
             elif msg["kind"] == "openfile":
-                evt = FileEvent(Path(msg["path"]), msg["readonly"])
+                evt = FileEvent(msg["path"], msg["readonly"])
                 event_handler(evt)

@@ -11,10 +11,10 @@ def watch_command(cmds):
 
             def _event_handler(evt):
                 if evt.readonly:
-                    if evt.path.is_file() and evt.path not in blacklist:
+                    if evt.path not in blacklist:
                         watch.watch(evt.path)
                 else:
-                    blacklist.add(evt.path)
+                    blacklist.add(str(evt.path))
 
             try:
                 for cmd in cmds:
@@ -24,6 +24,9 @@ def watch_command(cmds):
                 print(f"> {err}")
 
             while True:
-                modified_file = watch.wait_for_event()
-                if modified_file not in blacklist:
+                file_list = [
+                    str(f) for f in watch.wait_for_events() if str(f) not in blacklist
+                ]
+
+                if len(file_list) > 0:
                     break
