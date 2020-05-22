@@ -20,7 +20,7 @@ setup(
     url="https://github.com/9pt7/pwatch",
     packages=find_packages(),
     entry_points={"console_scripts": ["pwatch=pwatch.command_line:main"]},
-    install_requires=["watchdog"],
+    install_requires=["inotify_simple"],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
