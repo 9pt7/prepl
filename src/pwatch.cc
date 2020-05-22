@@ -5,7 +5,6 @@
 #include <dlfcn.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/socket.h>
 #include <sys/un.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -86,27 +85,19 @@ static void notify(const std::filesystem::path &file, bool readonly)
 {
     std::filesystem::path abs = std::filesystem::absolute(file);
 
-    const char *sock_addr = getenv("PWATCH_SOCK");
-    if (!sock_addr) return;
-    struct sockaddr_un addr = {.sun_family = AF_UNIX};
-    size_t addrlen = strlen(sock_addr);
-    if (addrlen >= sizeof(addr.sun_path)) {
-        /* Address too long */
-        return;
-    }
-    strncpy(addr.sun_path, sock_addr, sizeof(addr.sun_path) - 1);
+    const char *fifo_path = getenv("PWATCH_FIFO");
+    if (!fifo_path) return;
 
-    int sockfd = check(socket)(AF_UNIX, SOCK_STREAM, 0);
-    call_on_exit close_sock([sockfd]() { close(sockfd); });
+    int fifofd = check(NEXT(open))(fifo_path, O_WRONLY);
+    call_on_exit close_fifo([fifofd]() { close(fifofd); });
 
-    check(connect)(sockfd, (const struct sockaddr *)&addr, sizeof(addr));
+    std::string value = json{
+        {"kind", "openfile"},
+        {"path", abs.c_str()},
+        {"readonly",
+         readonly}}.dump();
 
-    std::string value =
-        json{{"kind", "openfile"}, {"path", abs.c_str()}, {"readonly", readonly}}.dump();
-
-    check(dprintf)(sockfd, "%s\n", value.c_str());
-
-    read_byte(sockfd);
+    check(dprintf)(fifofd, "%s\n", value.c_str());
 }
 
 static void notifyat(int fd, const char *file, bool readonly)
