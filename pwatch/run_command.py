@@ -44,9 +44,13 @@ def _target(cmd, fifo_path):
 
     proc = subprocess.Popen(cmd, env=env)
     returncode = proc.wait()
-    with open(fifo_path, "w") as fifo:
-        msg = {"kind": "finish", "returncode": returncode}
-        fifo.write(json.dumps(msg) + "\n")
+    try:
+        with open(fifo_path, "w") as fifo:
+            msg = {"kind": "finish", "returncode": returncode}
+            fifo.write(json.dumps(msg) + "\n")
+    except FileNotFoundError:
+        # The fifo must have already been closed
+        pass
 
 
 FileEvent = namedtuple("FileEvent", ("path", "readonly"))
