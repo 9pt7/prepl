@@ -1,17 +1,24 @@
 import os
 import inotify_simple
 from pathlib import Path
+import itertools
 
 
 class Watch(object):
-    def __enter__(self):
+    def init(self):
         self.__inotify = inotify_simple.INotify()
         self.__watches = dict()
         self.__watch_path = dict()
+
+    def close(self):
+        self.__inotify.close()
+
+    def __enter__(self):
+        self.init()
         return self
 
     def __exit__(self, type, value, traceback):
-        self.__inotify.close()
+        self.close()
 
     def watch(self, path):
 
@@ -29,14 +36,38 @@ class Watch(object):
             if s is s_default:
                 self.__watch_path[wd] = Path(path_to_watch).resolve()
 
-    def wait_for_events(self):
+    def wait_for_events(self, timeout=None):
+
+        if timeout is not None:
+            timeout = round(timeout * 1000)
 
         while True:
-            event_list = [
+            events = list(self.__inotify.read(timeout))
+
+            event_dirs = list(
+                itertools.chain(
+                    *(
+                        [
+                            self.__watch_path[evt.wd] / name
+                            for name in self.__watches[evt.wd]
+                        ]
+                        for evt in events
+                        if not evt.name
+                    )
+                )
+            )
+
+            event_files = [
                 self.__watch_path[evt.wd] / evt.name
-                for evt in self.__inotify.read()
+                for evt in events
                 if evt.name in self.__watches[evt.wd]
             ]
 
-            if len(event_list) > 0:
+            event_list = event_dirs + event_files
+
+            if not event_list:
+                # No events returned
+                if timeout is not None:
+                    raise TimeoutError()
+            else:
                 return event_list
