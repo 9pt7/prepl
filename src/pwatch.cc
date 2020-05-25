@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include <optional>
 
 #include <stdlib.h>
 
@@ -18,12 +19,45 @@
 #include <filesystem>
 #include <memory>
 #include <string_view>
+#include <tuple>
 
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 
 #define NEXT(NAME) ((decltype(&NAME))dlsym(RTLD_NEXT, #NAME))
+
+template<auto f>
+struct function;
+
+template<typename ReturnType, typename... Args, ReturnType (*f)(Args...)>
+struct function<f> {
+    using return_type = ReturnType;
+    using arg_types = std::tuple<Args...>;
+};
+
+#define WRAP_N(CMD, ARGDECL, ARGLIST, ...) \
+    extern "C" {                           \
+    function<CMD>::return_type CMD ARGDECL \
+    {                                      \
+        auto r = NEXT(CMD) ARGLIST;        \
+        __VA_ARGS__;                       \
+        return r;                          \
+    }                                      \
+    }
+
+template<auto F, std::size_t I>
+using arg_type = typename std::tuple_element<I, typename function<F>::arg_types>::type;
+
+#define ARG(CMD, I) arg_type<CMD, I> a##I
+
+#define WRAP_0(CMD, ...) WRAP_N(CMD, (), (), __VA_ARGS__)
+#define WRAP_1(CMD, ...) WRAP_N(CMD, (ARG(CMD, 0)), (a0), __VA_ARGS__)
+#define WRAP_2(CMD, ...) WRAP_N(CMD, (ARG(CMD, 0), ARG(CMD, 1)), (a0, a1), __VA_ARGS__)
+#define WRAP_3(CMD, ...) WRAP_N(CMD, (ARG(CMD, 0), ARG(CMD, 1), ARG(CMD, 2)), (a0, a1, a2), __VA_ARGS__)
+#define WRAP_4(CMD, ...) WRAP_N(CMD, (ARG(CMD, 0), ARG(CMD, 1), ARG(CMD, 2), ARG(CMD, 3)), (a0, a1, a2, a3), __VA_ARGS__)
+#define WRAP_5(CMD, ...) WRAP_N(CMD, (ARG(CMD, 0), ARG(CMD, 1), ARG(CMD, 2), ARG(CMD, 3), ARG(CMD, 4)), (a0, a1, a2, a3, a4), __VA_ARGS__)
+
 
 template<typename F>
 static auto check(F f)
@@ -34,15 +68,6 @@ static auto check(F f)
         }
         return res;
     };
-}
-
-static unsigned char read_byte(int fd)
-{
-    unsigned char b;
-    for (;;) {
-        ssize_t nread = check(read)(fd, &b, 1);
-        if (nread == 1) return b;
-    }
 }
 
 template<typename F>
@@ -56,6 +81,9 @@ struct call_on_exit {
 
     F f;
 };
+
+template<typename Arg>
+call_on_exit(Arg&&) -> call_on_exit<std::remove_reference_t<std::remove_const_t<Arg>>>;
 
 static std::filesystem::path path_from_fd(int fd)
 {
@@ -76,20 +104,27 @@ static std::filesystem::path path_from_fd(int fd)
     return std::filesystem::path(buf.get());
 }
 
-template<typename Arg>
-call_on_exit(Arg&&) -> call_on_exit<std::remove_reference_t<std::remove_const_t<Arg>>>;
 
 
+static int fifofd = -1;
 
-static void notify(const std::filesystem::path &file, bool readonly)
+static void __attribute__((destructor)) close_fifo()
+{
+    if (fifofd >= 0) {
+        close(fifofd);
+    }
+}
+
+static void notify_(const std::filesystem::path &file, bool readonly)
 {
     std::filesystem::path abs = std::filesystem::absolute(file);
 
     const char *fifo_path = getenv("PWATCH_FIFO");
     if (!fifo_path) return;
 
-    int fifofd = check(NEXT(open))(fifo_path, O_WRONLY);
-    call_on_exit close_fifo([fifofd]() { close(fifofd); });
+    if (fifofd < 0) {
+        fifofd = check(NEXT(open))(fifo_path, O_WRONLY);
+    }
 
     std::string value = json{
         {"kind", "openfile"},
@@ -100,169 +135,77 @@ static void notify(const std::filesystem::path &file, bool readonly)
     check(dprintf)(fifofd, "%s\n", value.c_str());
 }
 
-static void notifyat(int fd, const char *file, bool readonly)
+static void notify(const char *file, bool readonly, std::optional<int> fd = std::nullopt)
 {
-    notify(std::filesystem::relative(file, path_from_fd(fd)), readonly);
+    if (fd)
+        notify_(std::filesystem::relative(file, path_from_fd(*fd)), readonly);
+    else
+        notify_(file, readonly);
 }
 
+static bool is_reg_file(mode_t mode) { return (mode & S_IFMT) == S_IFREG; }
 
-constexpr int ACCESS_MODE_MASK = O_RDONLY | O_WRONLY | O_RDWR;
+WRAP_2(creat, if (r >= 0) notify(a0, false);)
+WRAP_2(creat64, if (r >= 0) notify(a0, false);)
 
-static bool open_readonly(int flags) { return (flags & ACCESS_MODE_MASK) == O_RDONLY; }
+WRAP_4(__xmknod, if (r >= 0 && is_reg_file(a2)) notify(a1, true);)
+WRAP_5(__xmknodat, if (r >= 0 && is_reg_file(a3)) notify(a2, true, a1);)
 
-#define OPEN_MODE                                                            \
-    va_list __args;                                                          \
-    va_start(__args, __oflag);                                               \
-    mode_t mode = (__OPEN_NEEDS_MODE(__oflag)) ? va_arg(__args, mode_t) : 0; \
-    va_end(__args)
+WRAP_3(__xstat,
+       if (r >= 0 && is_reg_file(a2->st_mode)) notify(a1, true);)
+WRAP_3(__xstat64,
+       if (r >= 0 && is_reg_file(a2->st_mode)) notify(a1, true);)
+WRAP_5(__fxstatat,
+       if (r >= 0 && is_reg_file(a3->st_mode)) notify(a2, true, a1);)
+WRAP_5(__fxstatat64,
+       if (r >= 0 && is_reg_file(a3->st_mode)) notify(a2, true, a1);)
 
-extern "C" {
+WRAP_1(unlink, if (r >= 0) notify(a0, false);)
+WRAP_3(unlinkat, if (r >= 0) notify(a1, false, a0);)
 
-int open(const char *__file, int __oflag, ...)
-{
-    notify(__file, open_readonly(__oflag));
-    OPEN_MODE;
-    return NEXT(open)(__file, __oflag, mode);
-}
+WRAP_2(access, if (r >= 0) notify(a0, false);)
+WRAP_4(faccessat, if (r >= 0) notify(a1, false, a0);)
 
-int open64(const char *__file, int __oflag, ...)
-{
-    notify(__file, open_readonly(__oflag));
-    OPEN_MODE;
-    return NEXT(open64)(__file, __oflag, mode);
-}
-
-int openat(int __fd, const char *__file, int __oflag, ...)
-{
-    notifyat(__fd, __file, open_readonly(__oflag));
-    OPEN_MODE;
-    return NEXT(openat)(__fd, __file, __oflag, mode);
-}
-
-int openat64(int __fd, const char *__file, int __oflag, ...)
-{
-    notifyat(__fd, __file, open_readonly(__oflag));
-    OPEN_MODE;
-    return NEXT(openat64)(__fd, __file, __oflag, mode);
-}
-
-int creat(const char *__file, mode_t __mode)
-{
-    notify(__file, false);
-    return NEXT(creat)(__file, __mode);
-}
-
-int creat64(const char *__file, mode_t __mode)
-{
-    notify(__file, false);
-    return NEXT(creat64)(__file, __mode);
-}
-
-int __xstat(int __ver, const char *pathname, struct stat *statbuf)
-{
-    int rc = NEXT(__xstat)(__ver, pathname, statbuf);
-    if (rc == 0) {
-        if ((statbuf->st_mode & S_IFMT) == S_IFREG) {
-            notify(pathname, true);
-        }
-    }
-    return rc;
-}
-
-int __xstat64(int __ver, const char *pathname, struct stat64 *statbuf)
-{
-    int rc = NEXT(__xstat64)(__ver, pathname, statbuf);
-    if (rc == 0) {
-        if ((statbuf->st_mode & S_IFMT) == S_IFREG) {
-            notify(pathname, true);
-        }
-    }
-    return rc;
-}
-
-int __xmknod(int __ver, const char *__path, __mode_t __mode, __dev_t *__dev)
-{
-    return NEXT(__xmknod)(__ver, __path, __mode, __dev);
-}
-
-int __xmknod64(int __ver, const char *__path, __mode_t __mode, __dev_t *__dev)
-{
-    return NEXT(__xmknod64)(__ver, __path, __mode, __dev);
-}
-
-FILE *fopen(const char *pathname, const char *mode)
+static bool fopen_readonly(const char *mode)
 {
     std::string_view m(mode);
-    notify(pathname, m == "r" || m == "rb");
-    return NEXT(fopen)(pathname, mode);
+    return m == "r" || m == "rb";
 }
 
-FILE *fopen64(const char *pathname, const char *mode)
-{
-    std::string_view m(mode);
-    notify(pathname, m == "r" || m == "rb");
-    return NEXT(fopen64)(pathname, mode);
-}
+WRAP_2(fopen, if (r != nullptr) notify(a0, fopen_readonly(a1));)
+WRAP_2(fopen64, if (r != nullptr) notify(a0, fopen_readonly(a1));)
 
-int unlink(const char *pathname)
-{
-    int rc = NEXT(unlink)(pathname);
-    if (rc == 0) {
-        notify(pathname, false);
+WRAP_2(rename, if (r >= 0) notify(a0, false), notify(a1, false);)
+WRAP_4(renameat, if (r >= 0) notify(a1, false, a0), notify(a3, false, a2);)
+
+static constexpr int ACCESS_MODE_MASK = O_RDONLY | O_WRONLY | O_RDWR;
+
+#define OPEN_WITH_NOTIFY(CMD, ARGDECL, ARGLIST, DIRFD)                       \
+    extern "C" {                                                             \
+    int CMD ARGDECL                                                          \
+    {                                                                        \
+        va_list __args;                                                      \
+        va_start(__args, __oflag);                                           \
+        mode_t mode =                                                        \
+            (__OPEN_NEEDS_MODE(__oflag)) ? va_arg(__args, mode_t) : 0;       \
+        va_end(__args);                                                      \
+                                                                             \
+        int rc = NEXT(CMD) ARGLIST;                                          \
+                                                                             \
+        if (rc >= 0)                                                         \
+            notify(__file, (__oflag & ACCESS_MODE_MASK) == O_RDONLY, DIRFD); \
+        return rc;                                                           \
+    }                                                                        \
     }
-    return rc;
-}
 
-int unlinkat(int dirfd, const char *pathname, int flags)
-{
-    int rc = NEXT(unlinkat)(dirfd, pathname, flags);
-    if (rc == 0) {
-        notifyat(dirfd, pathname, false);
-    }
-    return rc;
-}
+OPEN_WITH_NOTIFY(open, (const char *__file, int __oflag, ...),
+                 (__file, __oflag, mode), std::nullopt)
 
-int access(const char *pathname, int mode)
-{
-    notify(pathname, true);
-    return NEXT(access)(pathname, mode);
-}
+OPEN_WITH_NOTIFY(open64, (const char *__file, int __oflag, ...),
+                 (__file, __oflag, mode), std::nullopt)
 
-int accessat(int dirfd, const char *pathname, int mode, int flags)
-{
-    notifyat(dirfd, pathname, true);
-    return NEXT(accessat)(dirfd, pathname, mode, flags);
-}
+OPEN_WITH_NOTIFY(openat, (int __fd, const char *__file, int __oflag, ...),
+                 (__fd, __file, __oflag, mode), __fd)
 
-int rename(const char *oldpath, const char *newpath)
-{
-    notify(oldpath, true);
-    int rc = NEXT(rename)(oldpath, newpath);
-    if (rc == 0) {
-        notify(newpath, false);
-    }
-    return rc;
-}
-
-int renameat(int olddirfd, const char *oldpath, int newdirfd,
-             const char *newpath)
-{
-    notifyat(olddirfd, oldpath, true);
-    int rc = NEXT(renameat)(olddirfd, oldpath, newdirfd, newpath);
-    if (rc == 0) {
-        notifyat(newdirfd, newpath, false);
-    }
-    return rc;
-}
-
-int renameat2(int olddirfd, const char *oldpath, int newdirfd,
-              const char *newpath, unsigned int flags)
-{
-    notifyat(olddirfd, oldpath, true);
-    int rc = NEXT(renameat2)(olddirfd, oldpath, newdirfd, newpath, flags);
-    if (rc == 0) {
-        notifyat(newdirfd, newpath, false);
-    }
-    return rc;
-}
-}
+OPEN_WITH_NOTIFY(openat64, (int __fd, const char *__file, int __oflag, ...),
+                 (__fd, __file, __oflag, mode), __fd)
