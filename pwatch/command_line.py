@@ -20,7 +20,3 @@ def main(args=None):
         watch_command([[args.command] + args.args])
     except KeyboardInterrupt:
         print("")
-
-
-if __name__ == "__main__":
-    main()
