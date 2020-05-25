@@ -43,6 +43,11 @@ class Watch(object):
 
         while True:
             events = list(self.__inotify.read(timeout))
+            err_events = [evt for evt in events if evt.wd < 0]
+            if err_events:
+                # TODO
+                print(err_events)
+            file_events = [evt for evt in events if evt.wd >= 0]
 
             event_dirs = list(
                 itertools.chain(
@@ -51,7 +56,7 @@ class Watch(object):
                             self.__watch_path[evt.wd] / name
                             for name in self.__watches[evt.wd]
                         ]
-                        for evt in events
+                        for evt in file_events
                         if not evt.name
                     )
                 )
@@ -59,7 +64,7 @@ class Watch(object):
 
             event_files = [
                 self.__watch_path[evt.wd] / evt.name
-                for evt in events
+                for evt in file_events
                 if evt.name in self.__watches[evt.wd]
             ]
 
