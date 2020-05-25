@@ -8,6 +8,7 @@ pwatch.egg-info
 
 # python
 __pycache__
+*.pyc
 
 # env
 bin
