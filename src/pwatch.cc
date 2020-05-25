@@ -178,6 +178,9 @@ WRAP_2(fopen64, if (r != nullptr) notify(a0, fopen_readonly(a1));)
 WRAP_2(rename, if (r >= 0) notify(a0, false), notify(a1, false);)
 WRAP_4(renameat, if (r >= 0) notify(a1, false, a0), notify(a3, false, a2);)
 
+WRAP_2(mkdir, if (r >= 0) notify(a0, false);)
+WRAP_3(mkdirat, if (r >= 0) notify(a1, false, a0);)
+
 static constexpr int ACCESS_MODE_MASK = O_RDONLY | O_WRONLY | O_RDWR;
 
 #define OPEN_WITH_NOTIFY(CMD, ARGDECL, ARGLIST, DIRFD)                       \
