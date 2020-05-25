@@ -83,6 +83,23 @@ def test_unlink():
         check_events(watch)
 
 
+def test_event_on_close():
+    with watch_test() as (watch, tmp):
+
+        path = tmp / "file.txt"
+
+        with open(path, "wb", buffering=0) as f:
+            watch.watch(path)
+
+            check_no_events(watch)
+
+            f.write(b"hello world")
+
+            check_no_events(watch)
+
+        check_events(watch)
+
+
 def test_remove_dir():
     with watch_test() as (watch, tmp):
 

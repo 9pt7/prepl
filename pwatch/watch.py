@@ -24,7 +24,7 @@ class Watch(object):
 
         path_to_watch, name = os.path.split(os.path.abspath(path))
 
-        flags = inotify_simple.flags.DELETE | inotify_simple.flags.MODIFY
+        flags = inotify_simple.flags.DELETE | inotify_simple.flags.CLOSE_WRITE
         try:
             wd = self.__inotify.add_watch(path_to_watch, flags)
         except FileNotFoundError:
