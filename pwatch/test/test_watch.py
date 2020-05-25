@@ -111,3 +111,45 @@ def test_remove_dir():
 
         shutil.rmtree(subdir)
         check_events(watch)
+
+
+def test_move_replace():
+    with watch_test() as (watch, tmp):
+
+        path1 = tmp / "file.txt"
+        path2 = tmp / "file2.txt"
+
+        modify(path1)
+        modify(path2)
+
+        watch.watch(path1)
+
+        check_no_events(watch)
+
+        path2.rename(path1)
+
+        check_events(watch)
+
+
+def test_move_replace_from_other_dir():
+    with watch_test() as (watch, tmp):
+
+        subdir1 = tmp / "subdir1"
+        subdir1.mkdir()
+
+        subdir2 = tmp / "subdir2"
+        subdir2.mkdir()
+
+        path1 = subdir1 / "file.txt"
+        path2 = subdir2 / "file.txt"
+
+        modify(path1)
+        modify(path2)
+
+        watch.watch(path1)
+
+        check_no_events(watch)
+
+        path2.rename(path1)
+
+        check_events(watch)
