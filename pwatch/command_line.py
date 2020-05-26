@@ -1,7 +1,6 @@
 import argparse
 from .watch_command import watch_command
 
-
 parser = argparse.ArgumentParser(
     prog="pwatch",
     usage="%(prog)s [-h] command [args ...]",
@@ -10,7 +9,9 @@ parser = argparse.ArgumentParser(
     """,
 )
 parser.add_argument("command", help="the command to run")
-parser.add_argument("args", nargs="*", help="additional arguments for command")
+parser.add_argument(
+    "args", nargs=argparse.REMAINDER, help="additional arguments for command"
+)
 
 
 def main(args=None):
