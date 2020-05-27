@@ -24,3 +24,8 @@ def test_lstat(unwatched_file):
 def test_unlink(unwatched_file):
     events = run_command(["unlink", str(unwatched_file)])
     assert FileEvent(str(unwatched_file), False) in events
+
+
+def test_rm_r(tmp_path, unwatched_file):
+    events = run_command(["rm", "-r", str(tmp_path)])
+    assert FileEvent(str(unwatched_file), False) in events

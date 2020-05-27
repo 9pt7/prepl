@@ -9,7 +9,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include <string.h>
 #include <optional>
+#include <iostream>
 
 #include <stdlib.h>
 
@@ -59,13 +61,29 @@ using arg_type = typename std::tuple_element<I, typename function<F>::arg_types>
 #define WRAP_5(CMD, ...) WRAP_N(CMD, (ARG(CMD, 0), ARG(CMD, 1), ARG(CMD, 2), ARG(CMD, 3), ARG(CMD, 4)), (a0, a1, a2, a3, a4), __VA_ARGS__)
 
 
+static std::string errno_string()
+{
+    constexpr std::size_t buflen = 80;
+
+    std::unique_ptr<char[]> buf(std::make_unique<char[]>(buflen));
+    strerror_r(errno, buf.get(), buflen);
+
+    buf[buflen - 1] = '\0';
+
+    return buf.get();
+}
+
+struct os_error : std::runtime_error {
+    os_error() : runtime_error(errno_string()) {}
+};
+
 template<typename F>
 static auto check(F f)
 {
     return [f](auto... args) {
         auto res = f(args...);
-        if (res < 0) {
-        }
+        if (res < 0)
+            throw os_error();
         return res;
     };
 }
@@ -87,6 +105,10 @@ call_on_exit(Arg&&) -> call_on_exit<std::remove_reference_t<std::remove_const_t<
 
 static std::filesystem::path path_from_fd(int fd)
 {
+    if (fd == AT_FDCWD) {
+        return std::filesystem::current_path();
+    }
+
     std::string proc_fd_path(std::string("/proc/self/fd/") +
                              std::to_string(fd));
 
@@ -103,8 +125,6 @@ static std::filesystem::path path_from_fd(int fd)
 
     return std::filesystem::path(buf.get());
 }
-
-
 
 static int fifofd = -1;
 
@@ -137,10 +157,21 @@ static void notify_(const std::filesystem::path &file, bool readonly)
 
 static void notify(const char *file, bool readonly, std::optional<int> fd = std::nullopt)
 {
-    if (fd)
-        notify_(std::filesystem::relative(file, path_from_fd(*fd)), readonly);
-    else
-        notify_(file, readonly);
+    try {
+        const std::filesystem::path path(fd ? (path_from_fd(*fd) / file)
+                                            : std::filesystem::path(file));
+        notify_(path, readonly);
+    } catch (const std::exception &ex) {
+        std::cerr << "Could not notify file=\"" << file;
+        std::cerr << "\", readonly=" << (readonly ? "true" : "false");
+        std::cerr << ", fd=";
+        if (fd)
+            std::cerr << *fd;
+        else
+            std::cerr << "null";
+        std::cerr << ", err=\"" << ex.what() << "\"";
+        std::cerr << std::endl;
+    }
 }
 
 static bool is_reg_file(mode_t mode) { return (mode & S_IFMT) == S_IFREG; }
