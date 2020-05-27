@@ -4,7 +4,7 @@ from .watch import Watch
 from .run_command import run_command
 
 
-def watch_command(cmds):
+def watch_command(cmd, shell=False):
     while True:
         with Watch() as watch:
             blacklist = set()
@@ -17,9 +17,8 @@ def watch_command(cmds):
                     blacklist.add(str(evt.path))
 
             try:
-                for cmd in cmds:
-                    print(f"> {' '.join(cmd)}")
-                    run_command(cmd, _event_handler)
+                print(f"> {' '.join(cmd) if type(cmd) == list else cmd}")
+                run_command(cmd, _event_handler, shell)
             except subprocess.CalledProcessError as err:
                 print(f"> {err}")
 

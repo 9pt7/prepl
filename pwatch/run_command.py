@@ -31,7 +31,7 @@ def _fifo():
         os.rmdir(dirpath)
 
 
-def _target(cmd, fifo_path):
+def _target(cmd, fifo_path, shell):
 
     env = os.environ.copy()
     env["PWATCH_FIFO"] = fifo_path
@@ -42,7 +42,7 @@ def _target(cmd, fifo_path):
         pass
     env["LD_PRELOAD"] = " ".join(ld_preload_parts)
 
-    proc = subprocess.Popen(cmd, env=env)
+    proc = subprocess.Popen(cmd, env=env, shell=shell)
     returncode = proc.wait()
     try:
         with open(fifo_path, "w") as fifo:
@@ -56,7 +56,7 @@ def _target(cmd, fifo_path):
 FileEvent = namedtuple("FileEvent", ("path", "readonly"))
 
 
-def run_command(cmd, event_handler=None):
+def run_command(cmd, event_handler=None, shell=False):
 
     if event_handler is None:
         events = []
@@ -68,7 +68,7 @@ def run_command(cmd, event_handler=None):
         events = None
 
     with _fifo() as (fifo, fifo_path):
-        thread = threading.Thread(target=_target, args=(cmd, fifo_path))
+        thread = threading.Thread(target=_target, args=(cmd, fifo_path, shell))
         thread.start()
 
         while True:
