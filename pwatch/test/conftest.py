@@ -9,17 +9,18 @@ def watch():
 
 
 @pytest.fixture
-def file1(tmp_path):
-    file1 = tmp_path / "file1.txt"
-    file1.touch()
-    return file1
+def watched_file(watch, tmp_path):
+    watched_file = tmp_path / "watched_file.txt"
+    watched_file.touch()
+    watch.watch(watched_file)
+    return watched_file
 
 
 @pytest.fixture
-def file2(tmp_path):
-    file2 = tmp_path / "file2.txt"
-    file2.touch()
-    return file2
+def unwatched_file(tmp_path):
+    unwatched_file = tmp_path / "unwatched_file.txt"
+    unwatched_file.touch()
+    return unwatched_file
 
 
 @pytest.fixture
