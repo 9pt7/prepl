@@ -20,6 +20,11 @@ class Watch(object):
     def __exit__(self, type, value, traceback):
         self.close()
 
+    @property
+    def max_queued_events(self):
+        with open("/proc/sys/fs/inotify/max_queued_events", "r") as f:
+            return int(f.read())
+
     def watch(self, path):
 
         path_to_watch, name = os.path.split(os.path.abspath(path))
@@ -28,6 +33,7 @@ class Watch(object):
             inotify_simple.flags.DELETE
             | inotify_simple.flags.CLOSE_WRITE
             | inotify_simple.flags.MOVED_TO
+            | inotify_simple.flags.MOVED_FROM
         )
         try:
             wd = self.__inotify.add_watch(path_to_watch, flags)
@@ -50,7 +56,7 @@ class Watch(object):
             err_events = [evt for evt in events if evt.wd < 0]
             if err_events:
                 # TODO
-                print(err_events)
+                pass
             file_events = [evt for evt in events if evt.wd >= 0]
 
             event_dirs = list(
