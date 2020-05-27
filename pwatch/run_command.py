@@ -56,7 +56,17 @@ def _target(cmd, fifo_path):
 FileEvent = namedtuple("FileEvent", ("path", "readonly"))
 
 
-def run_command(cmd, event_handler):
+def run_command(cmd, event_handler=None):
+
+    if event_handler is None:
+        events = []
+
+        def event_handler(event):
+            events.append(event)
+
+    else:
+        events = None
+
     with _fifo() as (fifo, fifo_path):
         thread = threading.Thread(target=_target, args=(cmd, fifo_path))
         thread.start()
@@ -72,3 +82,5 @@ def run_command(cmd, event_handler):
             elif msg["kind"] == "openfile":
                 evt = FileEvent(msg["path"], msg["readonly"])
                 event_handler(evt)
+
+    return events
