@@ -159,6 +159,8 @@ WRAP_5(__fxstatat,
        if (r >= 0 && is_reg_file(a3->st_mode)) notify(a2, true, a1);)
 WRAP_5(__fxstatat64,
        if (r >= 0 && is_reg_file(a3->st_mode)) notify(a2, true, a1);)
+WRAP_3(__lxstat, if (r >= 0 && is_reg_file(a2->st_mode)) notify(a1, true);)
+WRAP_3(__lxstat64, if (r >= 0 && is_reg_file(a2->st_mode)) notify(a1, true);)
 
 WRAP_1(unlink, if (r >= 0) notify(a0, false);)
 WRAP_3(unlinkat, if (r >= 0) notify(a1, false, a0);)
