@@ -1,8 +1,21 @@
 from skbuild import setup
 from setuptools import find_packages
+import subprocess
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
+
+
+rev_commit = (
+    subprocess.check_output(["git", "rev-list", "--tags", "--max-count=1"])
+    .decode("utf8")
+    .strip()
+)
+version = (
+    subprocess.check_output(["git", "describe", "--tags", rev_commit])
+    .decode("utf8")
+    .strip()
+)
 
 
 def cmake_process_manifest_hook(file_list):
@@ -11,7 +24,7 @@ def cmake_process_manifest_hook(file_list):
 
 setup(
     name="pwatch",
-    version="1.0.0",
+    version=version,
     author="Peter Thompson",
     author_email="peter.thompson92@gmail.com",
     description="Rerun command on source change",
