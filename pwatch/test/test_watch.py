@@ -1,27 +1,10 @@
-from pwatch.watch import Watch
-import tempfile
-from pathlib import Path
-from contextlib import contextmanager
 import pytest
 import uuid
 import shutil
 
 
-@contextmanager
-def watch_test():
-    watch = Watch()
-    watch.init()
-    try:
-        tmp = tempfile.TemporaryDirectory()
-        try:
-            yield watch, Path(tmp.name)
-        finally:
-            tmp.cleanup()
-    finally:
-        watch.close()
-
-
 def modify(path):
+    print("MODIFY")
     with open(path, "w") as fil:
         fil.write(str(uuid.uuid4()))
 
@@ -38,118 +21,65 @@ def check_no_events(watch):
         check_events(watch)
 
 
-def test_modify_file():
-    with watch_test() as (watch, tmp):
+def test_modify_file(watch, file1):
+    watch.watch(file1)
 
-        path = tmp / "file.txt"
-        path.touch()
+    # Should not get event prior to edit
+    check_no_events(watch)
 
-        assert path.is_file()
+    modify(file1)
 
-        watch.watch(path)
+    # Should get event for edit
 
-        # Should not get event prior to edit
-        check_no_events(watch)
-
-        modify(path)
-
-        # Should get event for edit
-        check_events(watch)
+    check_events(watch)
 
 
-def test_modify_unwatched_in_same_dir_as_watched():
-    with watch_test() as (watch, tmp):
+def test_modify_unwatched_in_same_dir_as_watched(watch, file1, file2):
+    watch.watch(file1)
 
-        path = tmp / "file.txt"
-        path.touch()
-        watch.watch(path)
-
-        path2 = tmp / "file2.txt"
-
-        # Should not get event because path2 not being watched
-        modify(path2)
-        check_no_events(watch)
+    # Should not get event because path2 not being watched
+    modify(file2)
+    check_no_events(watch)
 
 
-def test_unlink():
-    with watch_test() as (watch, tmp):
+def test_unlink(watch, file1):
+    watch.watch(file1)
 
-        path = tmp / "file.txt"
-        path.touch()
-        watch.watch(path)
-
-        # Check for event after unlinking
-        path.unlink()
-        check_events(watch)
+    # Check for event after unlinking
+    file1.unlink()
+    check_events(watch)
 
 
-def test_event_on_close():
-    with watch_test() as (watch, tmp):
-
-        path = tmp / "file.txt"
-
-        with open(path, "wb", buffering=0) as f:
-            watch.watch(path)
-
-            check_no_events(watch)
-
-            f.write(b"hello world")
-
-            check_no_events(watch)
-
-        check_events(watch)
-
-
-def test_remove_dir():
-    with watch_test() as (watch, tmp):
-
-        subdir = tmp / "subdir"
-        subdir.mkdir()
-
-        path = subdir / "file.txt"
-        watch.watch(path)
-
-        shutil.rmtree(subdir)
-        check_events(watch)
-
-
-def test_move_replace():
-    with watch_test() as (watch, tmp):
-
-        path1 = tmp / "file.txt"
-        path2 = tmp / "file2.txt"
-
-        modify(path1)
-        modify(path2)
-
-        watch.watch(path1)
+def test_event_on_close(watch, file1):
+    with open(file1, "wb", buffering=0) as f:
+        watch.watch(file1)
 
         check_no_events(watch)
 
-        path2.rename(path1)
-
-        check_events(watch)
-
-
-def test_move_replace_from_other_dir():
-    with watch_test() as (watch, tmp):
-
-        subdir1 = tmp / "subdir1"
-        subdir1.mkdir()
-
-        subdir2 = tmp / "subdir2"
-        subdir2.mkdir()
-
-        path1 = subdir1 / "file.txt"
-        path2 = subdir2 / "file.txt"
-
-        modify(path1)
-        modify(path2)
-
-        watch.watch(path1)
+        f.write(b"hello world")
 
         check_no_events(watch)
 
-        path2.rename(path1)
+    check_events(watch)
 
-        check_events(watch)
+
+def test_remove_dir(watch, subdir1, subdir1_file1):
+    watch.watch(subdir1_file1)
+    shutil.rmtree(subdir1)
+    check_events(watch)
+
+
+def test_move_replace(watch, file1, file2):
+    watch.watch(file1)
+    check_no_events(watch)
+
+    file2.rename(file1)
+    check_events(watch)
+
+
+def test_move_replace_from_other_dir(watch, subdir1_file1, subdir2_file1):
+    watch.watch(subdir1_file1)
+    check_no_events(watch)
+
+    subdir2_file1.rename(subdir1_file1)
+    check_events(watch)
