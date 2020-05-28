@@ -6,16 +6,17 @@ will cause `make` to be called each time a source file is changed.
 
 ## Usage
 ```
-usage: pwatch [-h] command [args ...]
+usage: pwatch [-h] [-c COMMAND_STRING] [--debug] ...
 
 Autorun command on file change.
 
 positional arguments:
-  command     the command to run
-  args        additional arguments for command
+  command            the command to run
 
 optional arguments:
-  -h, --help  show this help message and exit
+  -h, --help         show this help message and exit
+  -c COMMAND_STRING  string to run in shell
+  --debug            use debug-level logging
 ```
 
 ## Installation
