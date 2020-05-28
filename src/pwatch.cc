@@ -196,8 +196,8 @@ WRAP_3(__lxstat64, if (r >= 0 && is_reg_file(a2->st_mode)) notify(a1, true);)
 WRAP_1(unlink, if (r >= 0) notify(a0, false);)
 WRAP_3(unlinkat, if (r >= 0) notify(a1, false, a0);)
 
-WRAP_2(access, if (r >= 0) notify(a0, false);)
-WRAP_4(faccessat, if (r >= 0) notify(a1, false, a0);)
+WRAP_2(access, if (r >= 0) notify(a0, true);)
+WRAP_4(faccessat, if (r >= 0) notify(a1, true, a0);)
 
 static bool fopen_readonly(const char *mode)
 {
