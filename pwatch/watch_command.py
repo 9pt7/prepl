@@ -1,7 +1,9 @@
 import subprocess
-
+import logging
 from .watch import Watch
 from .run_command import run_command
+
+logger = logging.getLogger(__name__)
 
 
 def watch_command(cmd, shell=False):
@@ -17,15 +19,20 @@ def watch_command(cmd, shell=False):
                     blacklist.add(str(evt.path))
 
             try:
-                print(f"> {' '.join(cmd) if type(cmd) == list else cmd}")
+                logger.info(
+                    "running command: " + (" ".join(cmd) if type(cmd) == list else cmd)
+                )
                 run_command(cmd, _event_handler, shell)
             except subprocess.CalledProcessError as err:
-                print(f"> {err}")
+                logger.error(err)
 
             while True:
                 file_list = [
                     str(f) for f in watch.wait_for_events() if str(f) not in blacklist
                 ]
+
+                for f in file_list:
+                    logger.info(f"file changed: {f}")
 
                 if len(file_list) > 0:
                     break

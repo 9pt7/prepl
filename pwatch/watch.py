@@ -2,6 +2,9 @@ import os
 import inotify_simple
 from pathlib import Path
 import itertools
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Watch(object):
@@ -37,8 +40,8 @@ class Watch(object):
         )
         try:
             wd = self.__inotify.add_watch(path_to_watch, flags)
-        except FileNotFoundError:
-            pass
+        except FileNotFoundError as err:
+            logger.warning(f"inotify_add_watch: {err}")
         else:
             s_default = set()
             s = self.__watches.setdefault(wd, s_default)
@@ -54,10 +57,18 @@ class Watch(object):
         while True:
             events = list(self.__inotify.read(timeout))
             err_events = [evt for evt in events if evt.wd < 0]
-            if err_events:
-                # TODO
-                pass
-            file_events = [evt for evt in events if evt.wd >= 0]
+            for evt in err_events:
+                logger.warning(f"inotify event error: {evt}")
+            valid_events = [evt for evt in events if evt.wd >= 0]
+
+            dir_events = [evt for evt in valid_events if not evt.name]
+            file_events = [evt for evt in valid_events if evt.name]
+
+            for evt in dir_events:
+                logger.debug(f"dir event: {self.__watch_path[evt.wd]}")
+
+            for evt in file_events:
+                logger.debug(f"file event: {self.__watch_path[evt.wd] / evt.name}")
 
             event_dirs = list(
                 itertools.chain(
@@ -66,8 +77,7 @@ class Watch(object):
                             self.__watch_path[evt.wd] / name
                             for name in self.__watches[evt.wd]
                         ]
-                        for evt in file_events
-                        if not evt.name
+                        for evt in dir_events
                     )
                 )
             )

@@ -6,6 +6,9 @@ import threading
 from pathlib import Path
 from collections import namedtuple
 from contextlib import contextmanager
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @contextmanager
@@ -81,6 +84,7 @@ def run_command(cmd, event_handler=None, shell=False):
                 break
             elif msg["kind"] == "openfile":
                 evt = FileEvent(msg["path"], msg["readonly"])
+                logger.debug(f"access({'r' if evt.readonly else 'w'}): {evt.path}")
                 event_handler(evt)
 
     return events
