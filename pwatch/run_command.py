@@ -80,7 +80,9 @@ def run_command(cmd, event_handler=None, shell=False):
             if msg["kind"] == "finish":
                 rc = msg["returncode"]
                 if rc != 0:
-                    raise subprocess.CalledProcessError(rc, " ".join(cmd))
+                    raise subprocess.CalledProcessError(
+                        rc, " ".join(cmd) if type(cmd) == list else cmd
+                    )
                 break
             elif msg["kind"] == "openfile":
                 evt = FileEvent(msg["path"], msg["readonly"])
