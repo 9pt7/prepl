@@ -26,6 +26,7 @@ def watch_command(cmd, shell=False):
             except subprocess.CalledProcessError as err:
                 logger.error(err)
 
+            logger.info("waiting for file change...")
             while True:
                 file_list = [
                     str(f) for f in watch.wait_for_events() if str(f) not in blacklist
