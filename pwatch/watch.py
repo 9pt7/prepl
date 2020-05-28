@@ -30,6 +30,12 @@ class Watch(object):
 
     def watch(self, path):
 
+        path = Path(path)
+
+        # We only want to watch valid, regular files
+        if not path.is_file():
+            return
+
         path_to_watch, name = os.path.split(os.path.abspath(path))
 
         flags = (

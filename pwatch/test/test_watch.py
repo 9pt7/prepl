@@ -75,3 +75,9 @@ def test_move_watched(watch, watched_file, unwatched_file):
 def test_watch_non_existing_dir(watch, tmp_path):
     watch.watch(tmp_path / "non_existing" / "path")
     check_no_events(watch)
+
+
+def test_watch_invalid_path(watch, watched_invalid_file):
+    check_no_events(watch)
+    modify(watched_invalid_file)
+    check_no_events(watch)

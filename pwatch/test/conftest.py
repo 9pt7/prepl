@@ -21,3 +21,10 @@ def unwatched_file(tmp_path):
     unwatched_file = tmp_path / "unwatched_file.txt"
     unwatched_file.touch()
     return unwatched_file
+
+
+@pytest.fixture
+def watched_invalid_file(watch):
+    path = "/dev/null"
+    watch.watch(path)
+    return path
