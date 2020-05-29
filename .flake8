@@ -8,4 +8,5 @@ exclude =
     dist,
     lib,
     lib64,
-    thirdparty
+    thirdparty,
+    .tox
