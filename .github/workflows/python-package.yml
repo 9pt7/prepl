@@ -32,4 +32,6 @@ jobs:
         flake8
     - name: Test
       run: |
-        pytest tests
+        cd tests
+        pytest
+        cd ..
