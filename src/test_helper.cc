@@ -80,17 +80,6 @@ struct arg_list {
         return argv[i++];
     }
 
-    int pop_int()
-    {
-        std::string_view arg(pop_string());
-        int res;
-        auto result = std::from_chars(arg.data(), arg.data() + arg.size(), res);
-        if (result.ec != std::errc{}) {
-            throw std::runtime_error("invalid argument");
-        }
-        return res;
-    }
-
     void finalize()
     {
         if (i != argc) {

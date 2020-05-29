@@ -3,27 +3,31 @@
 #endif
 
 #include <dlfcn.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/un.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <errno.h>
-#include <string.h>
-#include <optional>
-#include <iostream>
-
-#include <stdlib.h>
-
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/un.h>
+#include <unistd.h>
 
+#if __has_include(<filesystem>)
 #include <filesystem>
+namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#endif
+
+#include <iostream>
+#include <optional>
+
 #include <memory>
+#include <nlohmann/json.hpp>
 #include <string_view>
 #include <tuple>
-
-#include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 
@@ -49,17 +53,25 @@ struct function<f> {
     }
 
 template<auto F, std::size_t I>
-using arg_type = typename std::tuple_element<I, typename function<F>::arg_types>::type;
+using arg_type =
+    typename std::tuple_element<I, typename function<F>::arg_types>::type;
 
 #define ARG(CMD, I) arg_type<CMD, I> a##I
 
 #define WRAP_0(CMD, ...) WRAP_N(CMD, (), (), __VA_ARGS__)
 #define WRAP_1(CMD, ...) WRAP_N(CMD, (ARG(CMD, 0)), (a0), __VA_ARGS__)
-#define WRAP_2(CMD, ...) WRAP_N(CMD, (ARG(CMD, 0), ARG(CMD, 1)), (a0, a1), __VA_ARGS__)
-#define WRAP_3(CMD, ...) WRAP_N(CMD, (ARG(CMD, 0), ARG(CMD, 1), ARG(CMD, 2)), (a0, a1, a2), __VA_ARGS__)
-#define WRAP_4(CMD, ...) WRAP_N(CMD, (ARG(CMD, 0), ARG(CMD, 1), ARG(CMD, 2), ARG(CMD, 3)), (a0, a1, a2, a3), __VA_ARGS__)
-#define WRAP_5(CMD, ...) WRAP_N(CMD, (ARG(CMD, 0), ARG(CMD, 1), ARG(CMD, 2), ARG(CMD, 3), ARG(CMD, 4)), (a0, a1, a2, a3, a4), __VA_ARGS__)
-
+#define WRAP_2(CMD, ...) \
+    WRAP_N(CMD, (ARG(CMD, 0), ARG(CMD, 1)), (a0, a1), __VA_ARGS__)
+#define WRAP_3(CMD, ...)                                               \
+    WRAP_N(CMD, (ARG(CMD, 0), ARG(CMD, 1), ARG(CMD, 2)), (a0, a1, a2), \
+           __VA_ARGS__)
+#define WRAP_4(CMD, ...)                                              \
+    WRAP_N(CMD, (ARG(CMD, 0), ARG(CMD, 1), ARG(CMD, 2), ARG(CMD, 3)), \
+           (a0, a1, a2, a3), __VA_ARGS__)
+#define WRAP_5(CMD, ...)                                                      \
+    WRAP_N(CMD,                                                               \
+           (ARG(CMD, 0), ARG(CMD, 1), ARG(CMD, 2), ARG(CMD, 3), ARG(CMD, 4)), \
+           (a0, a1, a2, a3, a4), __VA_ARGS__)
 
 static std::string errno_string()
 {
@@ -82,8 +94,7 @@ static auto check(F f)
 {
     return [f](auto... args) {
         auto res = f(args...);
-        if (res < 0)
-            throw os_error();
+        if (res < 0) throw os_error();
         return res;
     };
 }
@@ -101,12 +112,13 @@ struct call_on_exit {
 };
 
 template<typename Arg>
-call_on_exit(Arg&&) -> call_on_exit<std::remove_reference_t<std::remove_const_t<Arg>>>;
+call_on_exit(Arg &&)
+    ->call_on_exit<std::remove_reference_t<std::remove_const_t<Arg>>>;
 
-static std::filesystem::path path_from_fd(int fd)
+static fs::path path_from_fd(int fd)
 {
     if (fd == AT_FDCWD) {
-        return std::filesystem::current_path();
+        return fs::current_path();
     }
 
     std::string proc_fd_path(std::string("/proc/self/fd/") +
@@ -123,7 +135,7 @@ static std::filesystem::path path_from_fd(int fd)
 
     check(readlink)(proc_str, buf.get(), bufsiz);
 
-    return std::filesystem::path(buf.get());
+    return fs::path(buf.get());
 }
 
 static int fifofd = -1;
@@ -135,9 +147,9 @@ static void __attribute__((destructor)) close_fifo()
     }
 }
 
-static void notify_(const std::filesystem::path &file, bool readonly)
+static void notify_(const fs::path &file, bool readonly)
 {
-    std::filesystem::path abs = std::filesystem::absolute(file);
+    fs::path abs = fs::absolute(file);
 
     const char *fifo_path = getenv("PWATCH_FIFO");
     if (!fifo_path) return;
@@ -155,11 +167,11 @@ static void notify_(const std::filesystem::path &file, bool readonly)
     check(dprintf)(fifofd, "%s\n", value.c_str());
 }
 
-static void notify(const char *file, bool readonly, std::optional<int> fd = std::nullopt)
+static void
+notify(const char *file, bool readonly, std::optional<int> fd = std::nullopt)
 {
     try {
-        const std::filesystem::path path(fd ? (path_from_fd(*fd) / file)
-                                            : std::filesystem::path(file));
+        const fs::path path(fd ? (path_from_fd(*fd) / file) : fs::path(file));
         notify_(path, readonly);
     } catch (const std::exception &ex) {
         std::cerr << "Could not notify file=\"" << file;
@@ -182,10 +194,8 @@ WRAP_2(creat64, if (r >= 0) notify(a0, false);)
 WRAP_4(__xmknod, if (r >= 0 && is_reg_file(a2)) notify(a1, true);)
 WRAP_5(__xmknodat, if (r >= 0 && is_reg_file(a3)) notify(a2, true, a1);)
 
-WRAP_3(__xstat,
-       if (r >= 0 && is_reg_file(a2->st_mode)) notify(a1, true);)
-WRAP_3(__xstat64,
-       if (r >= 0 && is_reg_file(a2->st_mode)) notify(a1, true);)
+WRAP_3(__xstat, if (r >= 0 && is_reg_file(a2->st_mode)) notify(a1, true);)
+WRAP_3(__xstat64, if (r >= 0 && is_reg_file(a2->st_mode)) notify(a1, true);)
 WRAP_5(__fxstatat,
        if (r >= 0 && is_reg_file(a3->st_mode)) notify(a2, true, a1);)
 WRAP_5(__fxstatat64,
