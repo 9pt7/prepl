@@ -28,6 +28,7 @@ namespace fs = std::experimental::filesystem;
 #include <nlohmann/json.hpp>
 #include <string_view>
 #include <tuple>
+#include <cstdarg>
 
 using json = nlohmann::json;
 
@@ -227,7 +228,7 @@ static constexpr int ACCESS_MODE_MASK = O_RDONLY | O_WRONLY | O_RDWR;
     extern "C" {                                                             \
     int CMD ARGDECL                                                          \
     {                                                                        \
-        va_list __args;                                                      \
+        std::va_list __args;                                                 \
         va_start(__args, __oflag);                                           \
         mode_t mode =                                                        \
             (__OPEN_NEEDS_MODE(__oflag)) ? va_arg(__args, mode_t) : 0;       \
