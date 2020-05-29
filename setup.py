@@ -1,6 +1,7 @@
 from skbuild import setup
 from setuptools import find_packages
 import subprocess
+from pathlib import Path
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -18,8 +19,13 @@ version = (
 )
 
 
+def test_path(path):
+    path = Path(path)
+    return path.suffix == "so" or path.name == "test_helper"
+
+
 def cmake_process_manifest_hook(file_list):
-    return [file for file in file_list if file.endswith(".so")]
+    return filter(test_path, file_list)
 
 
 setup(
