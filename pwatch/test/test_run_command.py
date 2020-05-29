@@ -1,4 +1,32 @@
 from pwatch.run_command import run_command, FileEvent
+import subprocess
+import json
+from pathlib import Path
+import pytest
+
+test_helper = str(Path(__file__).parent / "test_helper")
+
+commands = json.loads(subprocess.check_output(test_helper))
+
+
+@pytest.fixture(params=commands["readcmds"])
+def readcmd(request, unwatched_file):
+    return [test_helper, request.param, unwatched_file]
+
+
+@pytest.fixture(params=commands["editcmds"])
+def editcmd(request, unwatched_file):
+    return [test_helper, request.param, unwatched_file]
+
+
+def test_readcmd(readcmd, unwatched_file):
+    events = run_command(readcmd)
+    assert FileEvent(str(unwatched_file), True) in events
+
+
+def test_editcmd(editcmd, unwatched_file):
+    events = run_command(editcmd)
+    assert FileEvent(str(unwatched_file), False) in events
 
 
 def test_cat(unwatched_file):
