@@ -21,7 +21,7 @@ version = (
 
 def test_path(path):
     path = Path(path)
-    return path.suffix == "so" or path.name == "test_helper"
+    return path.suffix == ".so" or path.name == "test_helper"
 
 
 def cmake_process_manifest_hook(file_list):
