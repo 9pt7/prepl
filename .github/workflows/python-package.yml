@@ -12,10 +12,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.5, 3.6, 3.7, 3.8]
+        python-version: [3.7, 3.8]
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        recursive: true
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -24,6 +26,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install tox
+        pip install -e .
     - name: Tox
       run: |
         tox
