@@ -25,30 +25,36 @@ using json = nlohmann::json;
 
 #define NEXT(NAME) ((decltype(&NAME))dlsym(RTLD_NEXT, #NAME))
 
-template<auto f>
+template<typename T>
 struct function;
 
-template<typename ReturnType, typename... Args, ReturnType (*f)(Args...)>
-struct function<f> {
+template<typename ReturnType, typename... Args>
+struct function<ReturnType(Args...)> {
     using return_type = ReturnType;
     using arg_types = std::tuple<Args...>;
 };
 
-#define WRAP_N(CMD, ARGDECL, ARGLIST, ...) \
-    extern "C" {                           \
-    function<CMD>::return_type CMD ARGDECL \
-    {                                      \
-        auto r = NEXT(CMD) ARGLIST;        \
-        __VA_ARGS__;                       \
-        return r;                          \
-    }                                      \
+template<typename ReturnType, typename... Args>
+struct function<ReturnType(Args...) noexcept> {
+    using return_type = ReturnType;
+    using arg_types = std::tuple<Args...>;
+};
+
+#define WRAP_N(CMD, ARGDECL, ARGLIST, ...)           \
+    extern "C" {                                     \
+    function<decltype(CMD)>::return_type CMD ARGDECL \
+    {                                                \
+        auto r = NEXT(CMD) ARGLIST;                  \
+        __VA_ARGS__;                                 \
+        return r;                                    \
+    }                                                \
     }
 
-template<auto F, std::size_t I>
+template<typename T, std::size_t I>
 using arg_type =
-    typename std::tuple_element<I, typename function<F>::arg_types>::type;
+    typename std::tuple_element<I, typename function<T>::arg_types>::type;
 
-#define ARG(CMD, I) arg_type<CMD, I> a##I
+#define ARG(CMD, I) arg_type<decltype(CMD), I> a##I
 
 #define WRAP_0(CMD, ...) WRAP_N(CMD, (), (), __VA_ARGS__)
 #define WRAP_1(CMD, ...) WRAP_N(CMD, (ARG(CMD, 0)), (a0), __VA_ARGS__)
@@ -160,7 +166,7 @@ static void notify_(const std17::filesystem::path &file, bool readonly)
 }
 
 static void
-notify(const char *file, bool readonly, std::optional<int> fd = std::nullopt)
+notify(const char *file, bool readonly, std17::optional<int> fd = std::nullopt)
 {
     try {
         const std17::filesystem::path f(file);
