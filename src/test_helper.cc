@@ -7,7 +7,6 @@
 #include <exception>
 #include <iostream>
 #include <nlohmann/json.hpp>
-#include <tuple>
 #include <vector>
 
 #include "c++17.hpp"
@@ -15,12 +14,10 @@
 using json = nlohmann::json;
 
 namespace {
-std::tuple<std::vector<std17::string_view>, std::vector<std17::string_view>>
-call_cmd(std17::string_view cmd_name, const char *path)
+void call_cmd(std17::string_view cmd_name, const char *path,
+              std::vector<std17::string_view> &read_cmd_names,
+              std::vector<std17::string_view> &edit_cmd_names)
 {
-    std::vector<std17::string_view> read_cmd_names;
-    std::vector<std17::string_view> edit_cmd_names;
-
 #define READ_ACTION(CMD_NAME)                          \
     if ((read_cmd_names.push_back(#CMD_NAME), true) && \
         (read_cmd_names.back() == cmd_name))
@@ -66,8 +63,6 @@ call_cmd(std17::string_view cmd_name, const char *path)
     READ_ACTION(faccessat) faccessat(AT_FDCWD, path, F_OK, 0);
 
     // TODO: test rename (calls with two paths)
-
-    return {read_cmd_names, edit_cmd_names};
 }
 
 struct arg_list {
@@ -102,7 +97,9 @@ void main_(int argc, const char *argv[])
     std17::string_view path(getcmds ? "." : args.pop_string());
     args.finalize();
 
-    const auto [read_cmd_names, edit_cmd_names] = call_cmd(cmd, path.data());
+    std::vector<std17::string_view> read_cmd_names;
+    std::vector<std17::string_view> edit_cmd_names;
+    call_cmd(cmd, path.data(), read_cmd_names, edit_cmd_names);
 
     if (getcmds) {
         std::string stat_data(json{

@@ -29,13 +29,13 @@ template<typename T>
 struct function;
 
 template<typename ReturnType, typename... Args>
-struct function<ReturnType(Args...)> {
+struct function<ReturnType (Args...)> {
     using return_type = ReturnType;
     using arg_types = std::tuple<Args...>;
 };
 
 template<typename ReturnType, typename... Args>
-struct function<ReturnType(Args...) noexcept> {
+struct function<ReturnType (Args...) noexcept> {
     using return_type = ReturnType;
     using arg_types = std::tuple<Args...>;
 };
@@ -97,22 +97,6 @@ static auto check(F f)
     };
 }
 
-template<typename F>
-struct call_on_exit {
-    template<typename... Args>
-    call_on_exit(Args &&... args) : f(std::forward<Args>(args)...)
-    {
-    }
-
-    ~call_on_exit() { f(); }
-
-    F f;
-};
-
-template<typename Arg>
-call_on_exit(Arg &&)
-    ->call_on_exit<std::remove_reference_t<std::remove_const_t<Arg>>>;
-
 static std17::filesystem::path path_from_fd(int fd)
 {
     if (fd == AT_FDCWD) {
@@ -166,7 +150,7 @@ static void notify_(const std17::filesystem::path &file, bool readonly)
 }
 
 static void
-notify(const char *file, bool readonly, std17::optional<int> fd = std::nullopt)
+notify(const char *file, bool readonly, std17::optional<int> fd = std17::nullopt)
 {
     try {
         const std17::filesystem::path f(file);
@@ -242,10 +226,10 @@ static constexpr int ACCESS_MODE_MASK = O_RDONLY | O_WRONLY | O_RDWR;
     }
 
 OPEN_WITH_NOTIFY(open, (const char *__file, int __oflag, ...),
-                 (__file, __oflag, mode), std::nullopt)
+                 (__file, __oflag, mode), std17::nullopt)
 
 OPEN_WITH_NOTIFY(open64, (const char *__file, int __oflag, ...),
-                 (__file, __oflag, mode), std::nullopt)
+                 (__file, __oflag, mode), std17::nullopt)
 
 OPEN_WITH_NOTIFY(openat, (int __fd, const char *__file, int __oflag, ...),
                  (__fd, __file, __oflag, mode), __fd)

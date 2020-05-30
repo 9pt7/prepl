@@ -1,5 +1,5 @@
 pwatch/libpwatch.so
-pwatch/test/test_helper
+pwatch/tests/test_helper
 
 # build
 _skbuild
