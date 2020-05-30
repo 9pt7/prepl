@@ -13,22 +13,13 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-#if __has_include(<filesystem>)
-#include <filesystem>
-namespace fs = std::filesystem;
-#elif __has_include(<experimental/filesystem>)
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
-#endif
-
+#include <cstdarg>
 #include <iostream>
-#include <optional>
-
 #include <memory>
 #include <nlohmann/json.hpp>
-#include <string_view>
 #include <tuple>
-#include <cstdarg>
+
+#include "c++17.hpp"
 
 using json = nlohmann::json;
 
@@ -116,10 +107,10 @@ template<typename Arg>
 call_on_exit(Arg &&)
     ->call_on_exit<std::remove_reference_t<std::remove_const_t<Arg>>>;
 
-static fs::path path_from_fd(int fd)
+static std17::filesystem::path path_from_fd(int fd)
 {
     if (fd == AT_FDCWD) {
-        return fs::current_path();
+        return std17::filesystem::current_path();
     }
 
     std::string proc_fd_path(std::string("/proc/self/fd/") +
@@ -136,7 +127,7 @@ static fs::path path_from_fd(int fd)
 
     check(readlink)(proc_str, buf.get(), bufsiz);
 
-    return fs::path(buf.get());
+    return std17::filesystem::path(buf.get());
 }
 
 static int fifofd = -1;
@@ -148,9 +139,9 @@ static void __attribute__((destructor)) close_fifo()
     }
 }
 
-static void notify_(const fs::path &file, bool readonly)
+static void notify_(const std17::filesystem::path &file, bool readonly)
 {
-    fs::path abs = fs::absolute(file);
+    std17::filesystem::path abs = std17::filesystem::absolute(file);
 
     const char *fifo_path = getenv("PWATCH_FIFO");
     if (!fifo_path) return;
@@ -172,8 +163,9 @@ static void
 notify(const char *file, bool readonly, std::optional<int> fd = std::nullopt)
 {
     try {
-        const fs::path f(file);
-        const fs::path path((fd && f.is_relative()) ? (path_from_fd(*fd) / f) : f);
+        const std17::filesystem::path f(file);
+        const std17::filesystem::path path(
+            (fd && f.is_relative()) ? (path_from_fd(*fd) / f) : f);
         notify_(path, readonly);
     } catch (const std::exception &ex) {
         std::cerr << "Could not notify file=\"" << file;

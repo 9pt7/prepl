@@ -7,18 +7,19 @@
 #include <exception>
 #include <iostream>
 #include <nlohmann/json.hpp>
-#include <string_view>
 #include <tuple>
 #include <vector>
+
+#include "c++17.hpp"
 
 using json = nlohmann::json;
 
 namespace {
-std::tuple<std::vector<std::string_view>, std::vector<std::string_view>>
-call_cmd(std::string_view cmd_name, const char *path)
+std::tuple<std::vector<std17::string_view>, std::vector<std17::string_view>>
+call_cmd(std17::string_view cmd_name, const char *path)
 {
-    std::vector<std::string_view> read_cmd_names;
-    std::vector<std::string_view> edit_cmd_names;
+    std::vector<std17::string_view> read_cmd_names;
+    std::vector<std17::string_view> edit_cmd_names;
 
 #define READ_ACTION(CMD_NAME)                          \
     if ((read_cmd_names.push_back(#CMD_NAME), true) && \
@@ -72,7 +73,7 @@ call_cmd(std::string_view cmd_name, const char *path)
 struct arg_list {
     arg_list(int argc, const char *argv[]) : argc(argc), argv(argv) {}
 
-    std::string_view pop_string()
+    std17::string_view pop_string()
     {
         if (i >= argc) {
             throw std::runtime_error("invalid argument");
@@ -97,8 +98,8 @@ void main_(int argc, const char *argv[])
     arg_list args(argc, argv);
 
     bool getcmds(argc == 1);
-    std::string_view cmd(getcmds ? "" : args.pop_string());
-    std::string_view path(getcmds ? "." : args.pop_string());
+    std17::string_view cmd(getcmds ? "" : args.pop_string());
+    std17::string_view path(getcmds ? "." : args.pop_string());
     args.finalize();
 
     const auto [read_cmd_names, edit_cmd_names] = call_cmd(cmd, path.data());
