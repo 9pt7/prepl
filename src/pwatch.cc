@@ -25,17 +25,17 @@ using json = nlohmann::json;
 
 #define NEXT(NAME) ((decltype(&NAME))dlsym(RTLD_NEXT, #NAME))
 
-template<typename T>
+template<typename T, bool V=true>
 struct function;
 
-template<typename ReturnType, typename... Args>
-struct function<ReturnType (Args...)> {
+template<typename ReturnType, typename... Args, bool V>
+struct function<ReturnType (Args...), V> {
     using return_type = ReturnType;
     using arg_types = std::tuple<Args...>;
 };
 
 template<typename ReturnType, typename... Args>
-struct function<ReturnType (Args...) noexcept> {
+struct function<ReturnType (Args...) noexcept, true> {
     using return_type = ReturnType;
     using arg_types = std::tuple<Args...>;
 };
@@ -195,7 +195,7 @@ WRAP_4(faccessat, if (r >= 0) notify(a1, true, a0);)
 
 static bool fopen_readonly(const char *mode)
 {
-    std::string_view m(mode);
+    std17::string_view m(mode);
     return m == "r" || m == "rb";
 }
 
