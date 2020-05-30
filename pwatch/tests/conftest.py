@@ -1,5 +1,15 @@
 from pwatch.watch import Watch
 import pytest
+from pathlib import Path
+import os
+
+
+def absolute(path):
+    return Path(path).absolute()
+
+
+def relative(path):
+    return Path(os.path.relpath(path))
 
 
 @pytest.fixture
@@ -16,11 +26,11 @@ def watched_file(watch, tmp_path):
     return watched_file
 
 
-@pytest.fixture
-def unwatched_file(tmp_path):
+@pytest.fixture(params=[absolute, relative])
+def unwatched_file(request, tmp_path):
     unwatched_file = tmp_path / "unwatched_file.txt"
     unwatched_file.touch()
-    return unwatched_file
+    return request.param(unwatched_file)
 
 
 @pytest.fixture

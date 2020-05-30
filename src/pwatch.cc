@@ -172,7 +172,8 @@ static void
 notify(const char *file, bool readonly, std::optional<int> fd = std::nullopt)
 {
     try {
-        const fs::path path(fd ? (path_from_fd(*fd) / file) : fs::path(file));
+        const fs::path f(file);
+        const fs::path path((fd && f.is_relative()) ? (path_from_fd(*fd) / f) : f);
         notify_(path, readonly);
     } catch (const std::exception &ex) {
         std::cerr << "Could not notify file=\"" << file;

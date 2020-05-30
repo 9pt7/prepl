@@ -85,7 +85,7 @@ def run_command(cmd, event_handler=None, shell=False):
                     )
                 break
             elif msg["kind"] == "openfile":
-                evt = FileEvent(msg["path"], msg["readonly"])
+                evt = FileEvent(str(Path(msg["path"]).resolve()), msg["readonly"])
                 logger.debug(f"access({'r' if evt.readonly else 'w'}): {evt.path}")
                 event_handler(evt)
 
