@@ -25,6 +25,11 @@ using json = nlohmann::json;
 
 #define NEXT(NAME) ((decltype(&NAME))dlsym(RTLD_NEXT, #NAME))
 
+// On earlier compiler versions the noexcept attribute is ignored on template
+// parameters. Therefore the types 'ReturnType(Args...)' and
+// 'ReturnType(Args...) noexcept' are treated the same. The purpose of the
+// dummy parameter V is to prevent the template specializations from colliding
+// in this case. On later compiler versions the noexcept version is necessary.
 template<typename T, bool V=true>
 struct function;
 
@@ -172,6 +177,9 @@ notify(const char *file, bool readonly, std17::optional<int> fd = std17::nullopt
 
 static bool is_reg_file(mode_t mode) { return (mode & S_IFMT) == S_IFREG; }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-attributes"
+
 WRAP_2(creat, if (r >= 0) notify(a0, false);)
 WRAP_2(creat64, if (r >= 0) notify(a0, false);)
 
@@ -236,3 +244,5 @@ OPEN_WITH_NOTIFY(openat, (int __fd, const char *__file, int __oflag, ...),
 
 OPEN_WITH_NOTIFY(openat64, (int __fd, const char *__file, int __oflag, ...),
                  (__fd, __file, __oflag, mode), __fd)
+
+#pragma GCC diagnostic pop
