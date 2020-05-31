@@ -31,5 +31,17 @@ setup(
         "Topic :: System :: Filesystems",
     ],
     python_requires=">=3.6",
+    extras_require={
+        "dev": [
+            "setuptools",
+            "setuptools_scm[toml]",
+            "scikit-build",
+            "wheel",
+            "cmake",
+            "ninja",
+            "tox",
+            "pytest",
+        ]
+    },
     use_scm_version=True,
 )
