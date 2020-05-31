@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 @contextmanager
 def _fifo():
 
-    dirpath = tempfile.mkdtemp(prefix="pwatch-")
+    dirpath = tempfile.mkdtemp(prefix="prepl-")
     try:
         fifo_path = Path(dirpath) / "fifo"
         os.mkfifo(fifo_path)
@@ -37,8 +37,8 @@ def _fifo():
 def _target(cmd, fifo_path, shell):
 
     env = os.environ.copy()
-    env["PWATCH_FIFO"] = fifo_path
-    ld_preload_parts = [str(Path(__file__).parent.absolute() / "libpwatch.so")]
+    env["PREPL_FIFO"] = fifo_path
+    ld_preload_parts = [str(Path(__file__).parent.absolute() / "libprepl.so")]
     try:
         ld_preload_parts.append(env["LD_PRELOAD"])
     except KeyError:

@@ -1,4 +1,4 @@
-from pwatch.run_command import run_command, FileEvent
+from prepl.run_command import run_command, FileEvent
 import subprocess
 import json
 from pathlib import Path

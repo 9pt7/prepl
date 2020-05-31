@@ -1,4 +1,4 @@
-name: Pwatch package
+name: test
 
 on:
   push:

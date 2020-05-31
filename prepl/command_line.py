@@ -3,7 +3,7 @@ from .watch_command import watch_command
 import logging
 
 parser = argparse.ArgumentParser(
-    prog="pwatch",
+    prog="prepl",
     description="""
 Autorun command on file change.
 """,

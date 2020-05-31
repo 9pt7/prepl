@@ -1,12 +1,12 @@
-pwatch/libpwatch.so
-pwatch/tests/test_helper
+prepl/libprepl.so
+prepl/tests/test_helper
 
 # build
 _skbuild
 build
 dist
 MANIFEST
-pwatch.egg-info
+prepl.egg-info
 
 # python
 __pycache__

@@ -138,7 +138,7 @@ static void notify_(const std17::filesystem::path &file, bool readonly)
 {
     std17::filesystem::path abs = std17::filesystem::absolute(file);
 
-    const char *fifo_path = getenv("PWATCH_FIFO");
+    const char *fifo_path = getenv("PREPL_FIFO");
     if (!fifo_path) return;
 
     if (fifofd < 0) {
