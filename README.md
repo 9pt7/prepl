@@ -1,7 +1,7 @@
 Command line tool for rerunning a command when file dependencies change.
 
 ## Example usage
-- `pwatch pytest` will automatically run `pytest` as source files are saved.
+- `pwatch pytest` will automatically run your pytest tests as source files are saved.
 - `pwatch -c 'make && ./a.out'` will build and run an executable as you save source files.
 
 ## Description
