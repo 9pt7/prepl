@@ -5,12 +5,21 @@ import logging
 parser = argparse.ArgumentParser(
     prog="pwatch",
     description="""
-    Autorun command on file change.
-    """,
+Autorun command on file change.
+""",
 )
-parser.add_argument("command", nargs=argparse.REMAINDER, help="the command to run")
-parser.add_argument("-c", help="string to run in shell", metavar="COMMAND_STRING")
-parser.add_argument("--debug", help="use debug-level logging", action="store_true")
+parser.add_argument(
+    "command",
+    nargs=argparse.REMAINDER,
+    help="the command to run and any arguments",
+    metavar="COMMAND ...",
+)
+parser.add_argument(
+    "-c",
+    help="command string to run in shell (alternative to COMMAND ...)",
+    metavar="COMMAND_STRING",
+)
+parser.add_argument("--debug", help=argparse.SUPPRESS, action="store_true")
 
 
 def main(args=None):
