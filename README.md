@@ -5,6 +5,7 @@ Command line tool for rerunning a command when file dependencies change.
 - `pwatch -c 'make && ./a.out'` will build and run an executable as you save source files.
 
 ## Description
+pwatch monitors files that were accessed by the command process and reruns it when any of the files change. pwatch can be run  with either a single command or with a command string that is executed in a shell. The second form is useful when you want to run multiple commands (like build a project, then run some tests).
 ```
 usage: pwatch [-h] [-c COMMAND_STRING] ...
 
@@ -19,12 +20,12 @@ optional arguments:
 ```
 
 ## Installation
-pwatch is current Linux-only (macOS may be supported in the future). pwatch also requires Python 3.6+.
+pwatch current supports Linux. macOS may be supported in the future. pwatch requires Python 3.6+.
 
 ## Comparison to Alternatives
 `inotifywait` can provide similar functionality to `pwatch`. However, with `inotifywait` files need to be explicitly specified while they are automatically detected with `pwatch`. Explicitly specifying files can be cumbersome and if you watch a directory, then a rerun may be retriggered unvoluntairly if your text editor creates temporary backup files in the source tree. In summary, `pwatch` provides a simpler interface that 'just works'.
 
-## Development Setup
+## Example Development Setup
 ```
 # Note: the repository's submodules must be cloned
 git clone --recurse-submodules git@github.com:9pt7/pwatch.git
