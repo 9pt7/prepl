@@ -22,8 +22,8 @@ optional arguments:
 ## Installation
 pwatch current supports Linux. macOS may be supported in the future. pwatch requires Python 3.6+.
 
-## Comparison to Alternatives
-`inotifywait` can provide similar functionality to `pwatch`. However, with `inotifywait` files need to be explicitly specified while they are automatically detected with `pwatch`. Explicitly specifying files can be cumbersome and if you watch a directory, then a rerun may be retriggered unvoluntairly if your text editor creates temporary backup files in the source tree. In summary, `pwatch` provides a simpler interface that 'just works'.
+## Motivation
+While developing software and writing tests it is typically advantageous to immediately see the result of code changes while they are being made. Some testing frameworks like jest rerun tests when source files are changed but they are limited to the languages that the testing framework supports. Other tools like inotifywait, fswatch, entr, etc. provide a generic interface for rerunning a command when files change, but these tools require the files to monitor to be explicitly specified. This can be cumbersome because in addition to specifying all the files to monitor, it is also typically necessary to exclude build directories and temporary backup files created by editors, for instance, that may inadventantly trigger the command to be rerun. pwatch provides its functionality for any programming language without requiring an explitcit list to files to monitor.
 
 ## Example Development Setup
 ```
