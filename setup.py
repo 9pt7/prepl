@@ -33,7 +33,7 @@ setup(
     python_requires=">=3.6",
     extras_require={
         "dev": [
-            "setuptools",
+            "setuptools>=42",
             "setuptools_scm[toml]",
             "scikit-build",
             "wheel",
@@ -41,6 +41,7 @@ setup(
             "ninja",
             "tox",
             "pytest",
+            "flake8",
         ]
     },
     use_scm_version=True,
