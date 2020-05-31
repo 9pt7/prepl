@@ -42,6 +42,7 @@ setup(
             "tox",
             "pytest",
             "flake8",
+            "twine",
         ]
     },
     use_scm_version=True,
