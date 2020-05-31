@@ -1,10 +1,10 @@
-## Synopsis
-```
-pwatch make
-```
-will cause `make` to be called each time a source file is changed.
+Command line tool for rerunning a command when file dependencies change.
 
-## Usage
+## Example usage
+- `pwatch pytest` will automatically run `pytest` as source files are saved.
+- `pwatch -c 'make && ./a.out'` will build and run an executable as you save source files.
+
+## Description
 ```
 usage: pwatch [-h] [-c COMMAND_STRING] [--debug] ...
 
