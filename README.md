@@ -22,6 +22,11 @@ optional arguments:
 ## Installation
 prepl current supports Linux. macOS may be supported in the future. prepl requires Python 3.6+.
 
+You can install the latest release with
+```
+pip3 install prepl
+```
+
 ## Motivation
 While developing software and writing tests it is typically advantageous to immediately see the result of code changes while they are being made. Some testing frameworks like jest rerun tests when source files are changed but they are limited to the languages that the testing framework supports. Other tools like inotifywait, fswatch, entr, etc. provide a generic interface for rerunning a command when files change, but these tools require the files to monitor to be explicitly specified. This can be cumbersome because in addition to specifying all the files to monitor, it is also typically necessary to exclude build directories and temporary backup files created by editors, for instance, that may inadvertently trigger the command to be rerun. prepl provides its functionality for any programming language without requiring an explicit list to files to monitor.
 
