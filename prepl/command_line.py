@@ -30,7 +30,7 @@ def main(args=None):
     logging_kwargs["level"] = "DEBUG" if args.debug else "INFO"
 
     if not args.debug:
-        logging_kwargs["format"] = "> %(message)s"
+        logging_kwargs["format"] = "(prepl) %(message)s"
 
     logging.basicConfig(**logging_kwargs)
 
