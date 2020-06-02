@@ -1,4 +1,3 @@
-import subprocess
 import logging
 from .watch import Watch
 from .run_command import run_command
@@ -18,13 +17,7 @@ def watch_command(cmd, shell=False):
                 else:
                     blacklist.add(str(evt.path))
 
-            try:
-                logger.info(
-                    "running command: " + (" ".join(cmd) if type(cmd) == list else cmd)
-                )
-                run_command(cmd, _event_handler, shell)
-            except subprocess.CalledProcessError as err:
-                logger.error(err)
+            run_command(cmd, _event_handler, shell)
 
             logger.info("waiting for file change...")
             while True:
