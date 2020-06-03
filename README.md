@@ -1,11 +1,15 @@
-Command line tool for rerunning a command when file dependencies change.
+A simple command line tool for rerunning a command when file dependencies change.
 
 ## Example usage
 - `prepl pytest` will automatically run your pytest tests as source files are saved.
 - `prepl -c 'make && ./a.out'` will build and run an executable as you save source files.
 
 ## Description
-prepl monitors files that were accessed by the command process and reruns it when any of the files change. prepl can be run  with either a single command or with a command string that is executed in a shell. The second form is useful when you want to run multiple commands (like build a project, then run some tests).
+The primary use case for prepl is to automatically test your code when source files are saved. This is particularly useful in test-driven development where code is continuously tested during the development process in short iterations.
+
+prepl can be used with virtually any programming language; you just need to provide it with a command to run. prepl monitors the files that were accessed by the supplied command and reruns it when any of the files are updated.
+
+prepl can be run with either a single command or with a command string that is executed in a shell. The second form is useful when you want to run multiple commands (like build the project, then run the tests).
 ```
 usage: prepl [-h] [-c COMMAND_STRING] ...
 
@@ -28,7 +32,7 @@ pip3 install prepl
 ```
 
 ## Motivation
-While developing software and writing tests it is typically advantageous to immediately see the result of code changes while they are being made. Some testing frameworks like jest rerun tests when source files are changed but they are limited to the languages that the testing framework supports. Other tools like inotifywait, fswatch, entr, etc. provide a generic interface for rerunning a command when files change, but these tools require the files to monitor to be explicitly specified. This can be cumbersome because in addition to specifying all the files to monitor, it is also typically necessary to exclude build directories and temporary backup files created by editors, for instance, that may inadvertently trigger the command to be rerun. prepl provides its functionality for any programming language without requiring an explicit list to files to monitor.
+Some testing frameworks like jest rerun tests when source files are changed but they are limited to the languages that the testing framework supports. Other tools like inotifywait, fswatch, entr, etc. provide a generic interface for rerunning a command when files change, but these tools require the files to monitor to be explicitly specified. This can be cumbersome because in addition to specifying all the files to monitor, it is also typically necessary to exclude build directories and temporary backup files created by editors, for instance, that may inadvertently trigger the command to be rerun. prepl provides its functionality for any programming language without requiring an explicit list to files to monitor.
 
 ## Example Development Setup
 ```
