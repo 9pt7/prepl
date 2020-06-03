@@ -1,4 +1,4 @@
-# Prepl
+# prepl
 
 A flexible command line tool for rerunning a command when file dependencies change.
 
