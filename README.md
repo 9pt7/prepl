@@ -1,4 +1,6 @@
-A simple command line tool for rerunning a command when file dependencies change.
+# Prepl
+
+A flexible command line tool for rerunning a command when file dependencies change.
 
 ## Example usage
 - `prepl pytest` will automatically run your pytest tests as source files are saved.
